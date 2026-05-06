@@ -1,110 +1,56 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 )
 
 type Task struct {
-	Id          int       `json:"id"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-}
-
-type TaskManager struct {
-	tasks    []Task
-	filename string
-	nextId   int
-}
-
-func NewTaskManager(filename string) *TaskManager {
-	// TODO:
-}
-
-func (tm *TaskManager) loadTasks() {
-	// TODO:
-}
-
-func (tm *TaskManager) saveTasks() error {
-	// TODO:
-}
-
-func (tm *TaskManager) Add(description string) {
-	// TODO:
-	task := Task{
-		Id:          tm.nextId,
-		Description: description,
-		Status:      "todo",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	tm.tasks = append(tm.tasks, task)
-}
-
-func (tm *TaskManager) List(status string) {
-	// TODO:
-}
-
-func (tm *TaskManager) Update(id int, description string) {
-	// TODO:
-}
-
-func (tm *TaskManager) Delete(id int) {
-	// TODO:
-}
-
-func (tm *TaskManager) MarkStatus(id int, status string) {
-	// TODO:
-}
-
-func truncate(s string, maxLen int) string {
-	// TODO:
-}
-
-func printUsage() {
-	// TODO:
-	// Example usage:
-	// add "Buy groceries"
-	// list
-	// mark-in-progress 1
-	// mark-done 1
-	// delete 1
+	Id          int    `json:"id"`
+	Description string `json:"description"`
+	Status      string `json:"status"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
 }
 
 func main() {
-	// TODO:
 	if len(os.Args) < 2 {
-		printUsage()
+		fmt.Println("No arguments provided")
 		return
 	}
 
-	command := os.Args[1]
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
 
-	switch command {
-	case "add":
-		// TODO:
-	case "list":
-		// TODO:
-	case "update":
-	// TODO:
-	case "delete":
-	// TODO:
-	case "mark-todo":
-	// TODO:
-	case "mark-in-progress":
-	// TODO:
-	case "mark-done":
-	// TODO:
-	case "help", "-h", "--help":
-		printUsage()
-	default:
-		fmt.Printf("Unknown command: %s\n\n", command)
-		printUsage()
+	file, err := os.ReadFile("tasks.json")
+	var tasks []Task
+
+	if err == nil {
+		json.Unmarshal(file, &tasks)
 	}
+
+	switch os.Args[1] {
+	case "add":
+		if len(os.Args) < 3 {
+			fmt.Println("Please provide a task description")
+			return
+		}
+
+		newTask := Task{
+			Id:          len(tasks) + 1,
+			Description: os.Args[2],
+			Status:      "todo",
+			CreatedAt:   currentTime,
+			UpdatedAt:   currentTime,
+		}
+
+		tasks = append(tasks, newTask)
+		fmt.Println("Task added successfully.")
+	}
+
+	byteValue, _ := json.MarshalIndent(tasks, "", "  ")
+	err = os.WriteFile("tasks.json", byteValue, 0644)
 }
 
 // The application should run from the command line,
