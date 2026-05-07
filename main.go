@@ -34,6 +34,21 @@ func deleteTask(tasks []Task, id int) []Task {
 	return newTasks
 }
 
+// Update task
+func updateTask(tasks []Task, id int, newDescription string) []Task {
+	for i, task := range tasks {
+		if task.Id == id {
+			tasks[i].Description = newDescription
+			tasks[i].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+			fmt.Println("Task updated successfully")
+			return tasks
+		}
+	}
+
+	fmt.Println("Task not found")
+	return tasks
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -67,6 +82,14 @@ func main() {
 
 		tasks = append(tasks, newTask)
 		fmt.Println("Task added successfully.")
+	case "update":
+		if len(os.Args) < 4 {
+			fmt.Println("Usage: update <id> <new-description>")
+			return
+		}
+		id := getId(os.Args[2])
+		newDescription := os.Args[3]
+		tasks = updateTask(tasks, id, newDescription)
 	case "delete":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: delete <id>")
