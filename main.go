@@ -66,6 +66,19 @@ func listTasksByStatus(tasks []Task, status string) {
 	}
 }
 
+// Mark task with new status
+func markWithStatus(tasks []Task, id int, status string) []Task {
+	for i, task := range tasks {
+		if task.Id == id {
+			tasks[i].Status = status
+			tasks[i].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+			fmt.Println("Task status updated successfully")
+			return tasks
+		}
+	}
+	return tasks
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -88,7 +101,6 @@ func main() {
 			fmt.Println("Usage: add <description> <status>")
 			return
 		}
-
 		newTask := Task{
 			Id:          len(tasks) + 1,
 			Description: os.Args[2],
@@ -96,9 +108,9 @@ func main() {
 			CreatedAt:   currentTime,
 			UpdatedAt:   currentTime,
 		}
-
 		tasks = append(tasks, newTask)
 		fmt.Println("Task added successfully.")
+
 	case "update":
 		if len(os.Args) < 4 {
 			fmt.Println("Usage: update <id> <new-description>")
@@ -107,6 +119,7 @@ func main() {
 		id := getId(os.Args[2])
 		newDescription := os.Args[3]
 		tasks = updateTask(tasks, id, newDescription)
+
 	case "delete":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: delete <id>")
@@ -114,20 +127,31 @@ func main() {
 		}
 		id := getId(os.Args[2])
 		tasks = deleteTask(tasks, id)
+
 	case "list":
 		listTasks(tasks)
+
 	case "list-status":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: list-status <status>")
+			return
 		}
-
 		status := os.Args[2]
-
 		if status == "todo" || status == "in-progress" || status == "done" {
 			listTasksByStatus(tasks, status)
 		} else {
 			fmt.Println("Invalid status")
 		}
+
+	case "mark-with-status":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: mark-with-status <id> <status>")
+			return
+		}
+		id := getId(os.Args[2])
+		newStatus := os.Args[3]
+		tasks = markWithStatus(tasks, id, newStatus)
+
 	default:
 		fmt.Println("Unknown command:")
 	}
@@ -141,11 +165,11 @@ func main() {
 // and store the tasks in a JSON file. - done
 // User should be able to:
 // Add, Update, and Delete tasks - done
-// Mark a task as in progress or done
+// Mark a task as "todo" "in-progress" or "done" - done
 // List all tasks - done
-// List all tasks that have status "todo"
-// List all tasks that have status "in-progress"
-// List all tasks that have status "done"
+// List all tasks that have status "todo" - done
+// List all tasks that have status "in-progress" - done
+// List all tasks that have status "done" - done
 
 // Task properties:
 // Each task should have the following properties
