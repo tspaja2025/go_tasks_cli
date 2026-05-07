@@ -56,6 +56,16 @@ func listTasks(tasks []Task) {
 	}
 }
 
+// List tasks by status
+func listTasksByStatus(tasks []Task, status string) {
+	for _, task := range tasks {
+		if task.Status == status {
+			fmt.Printf("ID: %d | Description: %s | Status: %s\n",
+				task.Id, task.Description, task.Status)
+		}
+	}
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -74,15 +84,15 @@ func main() {
 
 	switch os.Args[1] {
 	case "add":
-		if len(os.Args) < 3 {
-			fmt.Println("Please provide a task description")
+		if len(os.Args) < 4 {
+			fmt.Println("Usage: add <description> <status>")
 			return
 		}
 
 		newTask := Task{
 			Id:          len(tasks) + 1,
 			Description: os.Args[2],
-			Status:      "todo",
+			Status:      os.Args[3],
 			CreatedAt:   currentTime,
 			UpdatedAt:   currentTime,
 		}
@@ -106,6 +116,18 @@ func main() {
 		tasks = deleteTask(tasks, id)
 	case "list":
 		listTasks(tasks)
+	case "list-status":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: list-status <status>")
+		}
+
+		status := os.Args[2]
+
+		if status == "todo" || status == "in-progress" || status == "done" {
+			listTasksByStatus(tasks, status)
+		} else {
+			fmt.Println("Invalid status")
+		}
 	default:
 		fmt.Println("Unknown command:")
 	}
@@ -120,9 +142,10 @@ func main() {
 // User should be able to:
 // Add, Update, and Delete tasks - done
 // Mark a task as in progress or done
-// List all tasks
-// List all tasks that are not done
-// List all tasks that are in progress
+// List all tasks - done
+// List all tasks that have status "todo"
+// List all tasks that have status "in-progress"
+// List all tasks that have status "done"
 
 // Task properties:
 // Each task should have the following properties
