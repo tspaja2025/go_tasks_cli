@@ -4,20 +4,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
 type Task struct {
 	Id          int    `json:"id"`
 	Description string `json:"description"`
-	Status      string `json:"status"`
+	Status      string `json:"status"` // "todo", "in-progress", "done"
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
+}
+
+func getId(id string) int {
+	idStr, _ := strconv.Atoi(id)
+	return idStr
+}
+
+// Delete task from json file
+func deleteTask(tasks []Task, id int) []Task {
+	newTasks := []Task{}
+
+	for _, task := range tasks {
+		if task.Id != id {
+			newTasks = append(newTasks, task)
+		}
+	}
+	fmt.Println("Task deleted successfully.")
+	return newTasks
 }
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
+		fmt.Println("Usage: <command> [arguments]")
 		return
 	}
 
@@ -47,6 +67,15 @@ func main() {
 
 		tasks = append(tasks, newTask)
 		fmt.Println("Task added successfully.")
+	case "delete":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: delete <id>")
+			return
+		}
+		id := getId(os.Args[2])
+		tasks = deleteTask(tasks, id)
+	default:
+		fmt.Println("Unknown command:")
 	}
 
 	byteValue, _ := json.MarshalIndent(tasks, "", "  ")
