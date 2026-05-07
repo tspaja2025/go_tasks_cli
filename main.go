@@ -49,6 +49,13 @@ func updateTask(tasks []Task, id int, newDescription string) []Task {
 	return tasks
 }
 
+// List tasks
+func listTasks(tasks []Task) {
+	for _, task := range tasks {
+		fmt.Printf("ID: %d | Description: %s | Status: %s\n", task.Id, task.Description, task.Status)
+	}
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -97,6 +104,8 @@ func main() {
 		}
 		id := getId(os.Args[2])
 		tasks = deleteTask(tasks, id)
+	case "list":
+		listTasks(tasks)
 	default:
 		fmt.Println("Unknown command:")
 	}
@@ -105,11 +114,11 @@ func main() {
 	err = os.WriteFile("tasks.json", byteValue, 0644)
 }
 
-// The application should run from the command line,
-// accept user actions and inputs as arguments,
-// and store the tasks in a JSON file.
+// The application should run from the command line, - done
+// accept user actions and inputs as arguments, - done
+// and store the tasks in a JSON file. - done
 // User should be able to:
-// Add, Update, and Delete tasks
+// Add, Update, and Delete tasks - done
 // Mark a task as in progress or done
 // List all tasks
 // List all tasks that are not done
@@ -117,11 +126,11 @@ func main() {
 
 // Task properties:
 // Each task should have the following properties
-// id: A unique identifier for the task
-// description: A short description of the task
-// status: The status of the task (todo,in-progress,done)
-// createdAt: The date and time when the task was created
-// updatedAt: The date and time when the task last updated
+// id: A unique identifier for the task - done
+// description: A short description of the task - done
+// status: The status of the task (todo,in-progress,done) - done
+// createdAt: The date and time when the task was created - done
+// updatedAt: The date and time when the task last updated - done
 
 // Constraints to guide the implementation:
 // Use positional arguments in command line to accept user inputs
