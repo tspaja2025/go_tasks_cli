@@ -26,3 +26,4 @@ go.work.sum
 
 # json files created in dev
 tasks.json
+task-cli

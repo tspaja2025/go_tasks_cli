@@ -17,7 +17,10 @@ type Task struct {
 }
 
 func getId(id string) int {
-	idStr, _ := strconv.Atoi(id)
+	idStr, err := strconv.Atoi(id)
+	if err != nil {
+		fmt.Println("Invalid ID.")
+	}
 	return idStr
 }
 
@@ -159,30 +162,3 @@ func main() {
 	byteValue, _ := json.MarshalIndent(tasks, "", "  ")
 	err = os.WriteFile("tasks.json", byteValue, 0644)
 }
-
-// The application should run from the command line, - done
-// accept user actions and inputs as arguments, - done
-// and store the tasks in a JSON file. - done
-// User should be able to:
-// Add, Update, and Delete tasks - done
-// Mark a task as "todo" "in-progress" or "done" - done
-// List all tasks - done
-// List all tasks that have status "todo" - done
-// List all tasks that have status "in-progress" - done
-// List all tasks that have status "done" - done
-
-// Task properties:
-// Each task should have the following properties
-// id: A unique identifier for the task - done
-// description: A short description of the task - done
-// status: The status of the task (todo,in-progress,done) - done
-// createdAt: The date and time when the task was created - done
-// updatedAt: The date and time when the task last updated - done
-
-// Constraints to guide the implementation:
-// Use positional arguments in command line to accept user inputs
-// Use a JSON file to store the tasks in the current directory
-// The JSON file should be created if it does not exist
-// Use the native file system module of the programming language to interact with the JSOn file
-// Do not use any external libraries or frameworks for this project
-// Ensure to handle errors and edge cases gracefully
