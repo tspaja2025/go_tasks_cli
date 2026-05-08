@@ -55,7 +55,13 @@ func updateTask(tasks []Task, id int, newDescription string) []Task {
 // List tasks
 func listTasks(tasks []Task) {
 	for _, task := range tasks {
-		fmt.Printf("ID: %d | Description: %s | Status: %s\n", task.Id, task.Description, task.Status)
+		fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
+			task.Id,
+			task.Description,
+			task.Status,
+			task.CreatedAt,
+			task.UpdatedAt,
+		)
 	}
 }
 
@@ -77,6 +83,22 @@ func markWithStatus(tasks []Task, id int, status string) []Task {
 			tasks[i].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 			fmt.Println("Task status updated successfully")
 			return tasks
+		}
+	}
+	return tasks
+}
+
+// Get status by id
+func getStatusById(tasks []Task, id int) []Task {
+	for _, task := range tasks {
+		if task.Id == id {
+			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
+				task.Id,
+				task.Description,
+				task.Status,
+				task.CreatedAt,
+				task.UpdatedAt,
+			)
 		}
 	}
 	return tasks
@@ -154,6 +176,14 @@ func main() {
 		id := getId(os.Args[2])
 		newStatus := os.Args[3]
 		tasks = markWithStatus(tasks, id, newStatus)
+
+	case "get-task-by-id":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: get-status-by-id <id>")
+			return
+		}
+		id := getId(os.Args[2])
+		tasks = getStatusById(tasks, id)
 
 	default:
 		fmt.Println("Unknown command:")

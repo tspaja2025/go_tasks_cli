@@ -23,6 +23,31 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 
 ---
 
+## TODO:
+[ ] Error Handling & Edge Cases
+
+[ ] Separate Concerns
+
+[ ] Input Validation
+
+[ ] Better Output Formatting
+
+[x] Get tasks by id
+
+[ ] Show task details
+
+[ ] Clear all tasks with confirmation
+
+[ ] Help
+
+[ ] Use constants
+
+[ ] Better main function structure
+
+[ ] Data migration support e.g. Handle ID collision or gaps
+
+---
+
 ## Installation
 
 Clone the repository:
@@ -124,6 +149,8 @@ Example:
 * Standard library packages:
 
   * `encoding/json`
+  * `fmt`
+  * `log`
   * `os`
   * `time`
   * `strconv`
