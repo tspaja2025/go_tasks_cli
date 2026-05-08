@@ -104,6 +104,19 @@ func getStatusById(tasks []Task, id int) []Task {
 	return tasks
 }
 
+// Clear all tasks
+func clearAllTasks(tasks []Task) []Task {
+	var confirmation string
+	fmt.Print("Are you sure? This command will delete ALL tasks. (yes/no)")
+	fmt.Scanln(&confirmation)
+	if confirmation == "yes" || confirmation == "y" {
+		fmt.Println("All tasks deleted successfully.")
+		return []Task{}
+	}
+	fmt.Println("Task deletion cancelled.")
+	return tasks
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -184,6 +197,9 @@ func main() {
 		}
 		id := getId(os.Args[2])
 		tasks = getStatusById(tasks, id)
+
+	case "clear-all-tasks":
+		tasks = clearAllTasks(tasks)
 
 	default:
 		fmt.Println("Unknown command:")

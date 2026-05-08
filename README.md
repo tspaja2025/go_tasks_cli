@@ -36,7 +36,7 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 
 [ ] Show task details
 
-[ ] Clear all tasks with confirmation
+[x] Clear all tasks with confirmation
 
 [ ] Help
 
