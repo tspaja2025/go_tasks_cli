@@ -117,6 +117,23 @@ func clearAllTasks(tasks []Task) []Task {
 	return tasks
 }
 
+// Show help
+func showHelp() {
+	fmt.Println(`
+Task Tracker CLI - Available Commands:
+  add <description> <status>     - Add a new task
+  update <id> <description>      - Update task description
+  delete <id>                    - Delete a task
+  clear-all-tasks                - Clear all tasks
+  list                           - List all tasks
+  list-status <status>           - List tasks by status
+  get-task-by-id <id>            - Get task by id
+  mark-with-status <id> <status> - Change task status
+  show <id>                      - Show task details
+  help                           - Show this help
+    `)
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("No arguments provided")
@@ -200,6 +217,9 @@ func main() {
 
 	case "clear-all-tasks":
 		tasks = clearAllTasks(tasks)
+
+	case "help", "-h", "--help":
+		showHelp()
 
 	default:
 		fmt.Println("Unknown command:")

@@ -38,7 +38,7 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 
 [x] Clear all tasks with confirmation
 
-[ ] Help
+[x] Help
 
 [ ] Use constants
 
