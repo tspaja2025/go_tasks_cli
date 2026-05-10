@@ -24,7 +24,9 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 ---
 
 ## TODO:
-[ ] Error Handling & Edge Cases
+[x] Error Handling
+
+[x] Edge Cases
 
 [ ] Separate Concerns
 

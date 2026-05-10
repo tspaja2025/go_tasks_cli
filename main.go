@@ -16,12 +16,25 @@ type Task struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
-func getId(id string) int {
+func getId(id string) (int, error) {
 	idStr, err := strconv.Atoi(id)
 	if err != nil {
-		fmt.Println("Invalid ID.")
+		return 0, fmt.Errorf("Invalid ID: %s", id)
 	}
-	return idStr
+	return idStr, nil
+}
+
+// Find maximum amount IDs and increment
+func nextId(tasks []Task) int {
+	maxId := 0
+
+	for _, task := range tasks {
+		if task.Id > maxId {
+			maxId = task.Id
+		}
+	}
+
+	return maxId + 1
 }
 
 // Delete task from json file
@@ -145,9 +158,11 @@ func main() {
 
 	file, err := os.ReadFile("tasks.json")
 	var tasks []Task
-
 	if err == nil {
-		json.Unmarshal(file, &tasks)
+		if err := json.Unmarshal(file, &tasks); err != nil {
+			fmt.Println("Warning: tasks.json is corrupted, starting fresh")
+			tasks = []Task{}
+		}
 	}
 
 	switch os.Args[1] {
@@ -157,7 +172,7 @@ func main() {
 			return
 		}
 		newTask := Task{
-			Id:          len(tasks) + 1,
+			Id:          nextId(tasks),
 			Description: os.Args[2],
 			Status:      os.Args[3],
 			CreatedAt:   currentTime,
@@ -171,7 +186,11 @@ func main() {
 			fmt.Println("Usage: update <id> <new-description>")
 			return
 		}
-		id := getId(os.Args[2])
+		id, err := getId(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		newDescription := os.Args[3]
 		tasks = updateTask(tasks, id, newDescription)
 
@@ -180,7 +199,11 @@ func main() {
 			fmt.Println("Usage: delete <id>")
 			return
 		}
-		id := getId(os.Args[2])
+		id, err := getId(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		tasks = deleteTask(tasks, id)
 
 	case "list":
@@ -199,11 +222,15 @@ func main() {
 		}
 
 	case "mark-with-status":
-		if len(os.Args) < 3 {
+		if len(os.Args) < 4 {
 			fmt.Println("Usage: mark-with-status <id> <status>")
 			return
 		}
-		id := getId(os.Args[2])
+		id, err := getId(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		newStatus := os.Args[3]
 		tasks = markWithStatus(tasks, id, newStatus)
 
@@ -212,7 +239,11 @@ func main() {
 			fmt.Println("Usage: get-status-by-id <id>")
 			return
 		}
-		id := getId(os.Args[2])
+		id, err := getId(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		tasks = getStatusById(tasks, id)
 
 	case "clear-all-tasks":
@@ -225,6 +256,13 @@ func main() {
 		fmt.Println("Unknown command:")
 	}
 
-	byteValue, _ := json.MarshalIndent(tasks, "", "  ")
-	err = os.WriteFile("tasks.json", byteValue, 0644)
+	byteValue, err := json.MarshalIndent(tasks, "", "  ")
+	if err != nil {
+		fmt.Println("Failed to encode tasks:", err)
+		return
+	}
+	if err := os.WriteFile("tasks.json", byteValue, 0644); err != nil {
+		fmt.Println("Failed to save tasks:", err)
+		return
+	}
 }
