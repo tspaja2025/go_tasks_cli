@@ -24,10 +24,7 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 ---
 
 ## TODO:
-1. Separate concerns
 2. Avoid rewriting tasks.json after every command
-3. Error handling
-4. Validate status values
 5. Return errors instead of printing inside helpers
 6. Use constants for statuses
 7. Improve command parsing
@@ -40,7 +37,6 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 14. Add atomic file writes
 15. Use enums via custom type
 16. Add graceful UX improvements
-17. Rename misleading function names
 18. Avoid repeated task scanning
 19. Add persistence abstraction
 

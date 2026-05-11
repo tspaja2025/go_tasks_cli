@@ -144,12 +144,21 @@ func handleDelete(args []string, tasks []Task) ([]Task, error) {
 func deleteTask(tasks []Task, id int) []Task {
 	newTasks := []Task{}
 
+	found := false
 	for _, task := range tasks {
 		if task.ID != id {
 			newTasks = append(newTasks, task)
+		} else {
+			found = true
 		}
 	}
-	fmt.Println("Task deleted successfully.")
+
+	if found {
+		fmt.Println("Task deleted successfully.")
+	} else {
+		fmt.Println("Task not found.")
+	}
+
 	return newTasks
 }
 
@@ -168,16 +177,16 @@ func handleBatchDelete(args []string, tasks []Task) ([]Task, error) {
 }
 
 func batchDeleteTasks(tasks []Task, ids []int) []Task {
-	mapIds := make(map[int]bool)
+	idSet := make(map[int]struct{})
 
 	for _, id := range ids {
-		mapIds[id] = true
+		idSet[id] = struct{}{}
 	}
 
 	var newTasks []Task
 
 	for _, task := range tasks {
-		if !mapIds[task.ID] {
+		if _, exists := idSet[task.ID]; !exists {
 			newTasks = append(newTasks, task)
 		}
 	}
@@ -244,7 +253,7 @@ func handleMarkStatus(args []string, tasks []Task) ([]Task, error) {
 		return tasks, err
 	}
 
-	return markWithStatus(tasks, id, args[0]), nil
+	return markWithStatus(tasks, id, args[1]), nil
 }
 
 func markWithStatus(tasks []Task, id int, status string) []Task {
@@ -270,10 +279,10 @@ func handleGetTask(args []string, tasks []Task) ([]Task, error) {
 		return tasks, err
 	}
 
-	return getStatusById(tasks, id), nil
+	return getTaskByID(tasks, id), nil
 }
 
-func getStatusById(tasks []Task, id int) []Task {
+func getTaskByID(tasks []Task, id int) []Task {
 	for _, task := range tasks {
 		if task.ID == id {
 			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
@@ -352,7 +361,7 @@ Task Tracker CLI - Available Commands:
   add <description> <status>     - Add a new task
   update <id> <description>      - Update task description
   delete <id>                    - Delete a task
-  batch-delete <id> - <id>       - Batch delete tasks
+  batch-delete <start-end>       - Batch delete tasks
   clear-all-tasks                - Clear all tasks
   list                           - List all tasks
   list-status <status>           - List tasks by status
@@ -395,12 +404,12 @@ func parseIDRange(input string) ([]int, error) {
 			return nil, fmt.Errorf("Invalid range format")
 		}
 
-		start, err := strconv.Atoi(parts[0])
+		start, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 		if err != nil {
 			return nil, fmt.Errorf("Invalid start id")
 		}
 
-		end, err := strconv.Atoi(parts[1])
+		end, err := strconv.Atoi(strings.TrimSpace(parts[1]))
 		if err != nil {
 			return nil, fmt.Errorf("Invalid end id")
 		}
@@ -425,4 +434,14 @@ func parseIDRange(input string) ([]int, error) {
 	ids = append(ids, id)
 
 	return ids, nil
+}
+
+// Validate status
+func isValidStatus(status string) bool {
+	switch status {
+	case StatusTodo, StatusInProgress, StatusDone:
+		return true
+	default:
+		return false
+	}
 }
