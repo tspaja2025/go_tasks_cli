@@ -12,14 +12,356 @@ import (
 type Task struct {
 	ID          int    `json:"id"`
 	Description string `json:"description"`
-	Status      string `json:"status"` // "todo", "in-progress", "done"
+	Status      string `json:"status"`
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
 }
 
 const (
-	TimeFormat = "2006-01-02 15:04:05"
+	StatusTodo       = "todo"
+	StatusInProgress = "in-progress"
+	StatusDone       = "done"
+	TimeFormat       = "2006-01-02 15:04:05"
 )
+
+func main() {
+	if len(os.Args) < 2 {
+		printUsage()
+		return
+	}
+
+	tasks, err := loadTasks()
+	if err != nil {
+		fmt.Printf("Error loading tasks: %v\n", err)
+		return
+	}
+
+	command := os.Args[1]
+	args := os.Args[2:]
+
+	tasks, err = executeCommand(command, args, tasks)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	if err := saveTasks(tasks); err != nil {
+		fmt.Printf("Error saving tasks: %v\n", err)
+	}
+}
+
+// Execute commands
+func executeCommand(command string, args []string, tasks []Task) ([]Task, error) {
+	switch command {
+	case "add":
+		return handleAdd(args, tasks)
+	case "update":
+		return handleUpdate(args, tasks)
+	case "delete":
+		return handleDelete(args, tasks)
+	case "batch-delete":
+		return handleBatchDelete(args, tasks)
+	case "list":
+		return handleList(tasks), nil
+	case "list-status":
+		return handleListStatus(args, tasks)
+	case "mark-with-status":
+		return handleMarkStatus(args, tasks)
+	case "get-task-by-id":
+		return handleGetTask(args, tasks)
+	case "clear-all-tasks":
+		return handleClearAll(tasks)
+	case "help", "-h", "--help":
+		printHelp()
+		return tasks, nil
+	default:
+		return tasks, fmt.Errorf("Unknown command: %s", command)
+	}
+}
+
+// Handle task add
+func handleAdd(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 2 {
+		return tasks, fmt.Errorf("Usage: add <description> <status>")
+	}
+
+	currentTime := time.Now().Format(TimeFormat)
+	newTask := Task{
+		ID:          nextID(tasks),
+		Description: args[0],
+		Status:      args[1],
+		CreatedAt:   currentTime,
+		UpdatedAt:   currentTime,
+	}
+
+	tasks = append(tasks, newTask)
+	fmt.Println("Task added successfully")
+	return tasks, nil
+}
+
+// Handle task update
+func handleUpdate(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 2 {
+		return tasks, fmt.Errorf("Usage: update <id> <new-description>")
+	}
+
+	id, err := getID(args[0])
+	if err != nil {
+		return tasks, err
+	}
+
+	return updateTask(tasks, id, args[1]), nil
+}
+
+func updateTask(tasks []Task, id int, newDescription string) []Task {
+	for i, task := range tasks {
+		if task.ID == id {
+			tasks[i].Description = newDescription
+			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
+			fmt.Println("Task updated successfully")
+			return tasks
+		}
+	}
+
+	fmt.Println("Task not found")
+	return tasks
+}
+
+// Handle task delete
+func handleDelete(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 1 {
+		return tasks, fmt.Errorf("Usage: delete <id>")
+	}
+
+	id, err := getID(args[0])
+	if err != nil {
+		return tasks, err
+	}
+
+	return deleteTask(tasks, id), nil
+}
+
+func deleteTask(tasks []Task, id int) []Task {
+	newTasks := []Task{}
+
+	for _, task := range tasks {
+		if task.ID != id {
+			newTasks = append(newTasks, task)
+		}
+	}
+	fmt.Println("Task deleted successfully.")
+	return newTasks
+}
+
+// Handle task batch delete
+func handleBatchDelete(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 1 {
+		return tasks, fmt.Errorf("Usage: batch-delete <id-range>")
+	}
+
+	ids, err := parseIDRange(args[0])
+	if err != nil {
+		return tasks, err
+	}
+
+	return batchDeleteTasks(tasks, ids), nil
+}
+
+func batchDeleteTasks(tasks []Task, ids []int) []Task {
+	mapIds := make(map[int]bool)
+
+	for _, id := range ids {
+		mapIds[id] = true
+	}
+
+	var newTasks []Task
+
+	for _, task := range tasks {
+		if !mapIds[task.ID] {
+			newTasks = append(newTasks, task)
+		}
+	}
+
+	fmt.Println("Batch delete completed.")
+
+	return newTasks
+}
+
+// Handle list tasks
+func handleList(tasks []Task) []Task {
+	listTasks(tasks)
+	return tasks
+}
+
+func listTasks(tasks []Task) {
+	fmt.Println("\n========================================= Task List ==============================================")
+	fmt.Printf("%-6s | %-48s | %-12s | %-20s | %-20s\n", "ID", "Description", "Status", "Created At", "Updated At")
+	fmt.Println(strings.Repeat("-", 98))
+	for _, task := range tasks {
+		fmt.Printf("%-6d | %-48s | %-12s | %-20s | %-20s\n",
+			task.ID,
+			task.Description,
+			task.Status,
+			task.CreatedAt,
+			task.UpdatedAt,
+		)
+	}
+	fmt.Println(strings.Repeat("=", 98))
+}
+
+// Handle list statuses
+func handleListStatus(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 1 {
+		return tasks, fmt.Errorf("Usage: list-status <status>")
+	}
+
+	status := args[0]
+	if status != StatusTodo && status != StatusInProgress && status != StatusDone {
+		return tasks, fmt.Errorf("Invalid status: %s", status)
+	}
+
+	listTasksByStatus(tasks, status)
+	return tasks, nil
+}
+
+func listTasksByStatus(tasks []Task, status string) {
+	for _, task := range tasks {
+		if task.Status == status {
+			fmt.Printf("ID: %d | Description: %s | Status: %s\n",
+				task.ID, task.Description, task.Status)
+		}
+	}
+}
+
+// Handle mark status
+func handleMarkStatus(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 2 {
+		return tasks, fmt.Errorf("Usage: mark-with-status <id> <status>")
+	}
+
+	id, err := getID(args[0])
+	if err != nil {
+		return tasks, err
+	}
+
+	return markWithStatus(tasks, id, args[0]), nil
+}
+
+func markWithStatus(tasks []Task, id int, status string) []Task {
+	for i, task := range tasks {
+		if task.ID == id {
+			tasks[i].Status = status
+			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
+			fmt.Println("Task status updated successfully")
+			return tasks
+		}
+	}
+	return tasks
+}
+
+// Handle get task
+func handleGetTask(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 1 {
+		return tasks, fmt.Errorf("Usage: get-tasks-by-id <id>")
+	}
+
+	id, err := getID(args[0])
+	if err != nil {
+		return tasks, err
+	}
+
+	return getStatusById(tasks, id), nil
+}
+
+func getStatusById(tasks []Task, id int) []Task {
+	for _, task := range tasks {
+		if task.ID == id {
+			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
+				task.ID,
+				task.Description,
+				task.Status,
+				task.CreatedAt,
+				task.UpdatedAt,
+			)
+		}
+	}
+	return tasks
+}
+
+// Handle clear all
+func handleClearAll(tasks []Task) ([]Task, error) {
+	return clearAllTasks(tasks), nil
+}
+
+func clearAllTasks(tasks []Task) []Task {
+	var confirmation string
+	fmt.Print("Are you sure? This command will delete ALL tasks. (yes/no)")
+	fmt.Scanln(&confirmation)
+	if confirmation == "yes" || confirmation == "y" {
+		fmt.Println("All tasks deleted successfully.")
+		return []Task{}
+	}
+	fmt.Println("Task deletion cancelled.")
+	return tasks
+}
+
+// Load Tasks
+func loadTasks() ([]Task, error) {
+	file, err := os.ReadFile("tasks.json")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []Task{}, nil
+		}
+		return nil, fmt.Errorf("Failed to read tasks file: %w", err)
+	}
+
+	var tasks []Task
+	if err := json.Unmarshal(file, &tasks); err != nil {
+		fmt.Println("Warning: tasks.json is corrupted, starting fresh")
+		return []Task{}, nil
+	}
+
+	return tasks, nil
+}
+
+// Save Tasks
+func saveTasks(tasks []Task) error {
+	byteValue, err := json.MarshalIndent(tasks, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode tasks: %w", err)
+	}
+
+	if err := os.WriteFile("tasks.json", byteValue, 0644); err != nil {
+		return fmt.Errorf("Failed to save tasks: %w", err)
+	}
+
+	return nil
+}
+
+// Print usage
+func printUsage() {
+	fmt.Println("No arguments provided")
+	fmt.Println("Usage: <command> [arguments]")
+	fmt.Println("Run 'help' for available commands")
+}
+
+// Print help
+func printHelp() {
+	fmt.Println(`
+Task Tracker CLI - Available Commands:
+  add <description> <status>     - Add a new task
+  update <id> <description>      - Update task description
+  delete <id>                    - Delete a task
+  batch-delete <id> - <id>       - Batch delete tasks
+  clear-all-tasks                - Clear all tasks
+  list                           - List all tasks
+  list-status <status>           - List tasks by status
+  get-task-by-id <id>            - Get task by id
+  mark-with-status <id> <status> - Change task status
+  show <id>                      - Show task details
+  help                           - Show this help
+    `)
+}
 
 func getID(id string) (int, error) {
 	idStr, err := strconv.Atoi(id)
@@ -83,272 +425,4 @@ func parseIDRange(input string) ([]int, error) {
 	ids = append(ids, id)
 
 	return ids, nil
-}
-
-// Add tasks
-func addTask() {
-	// TODO:
-}
-
-// Delete task
-func deleteTask(tasks []Task, id int) []Task {
-	newTasks := []Task{}
-
-	for _, task := range tasks {
-		if task.ID != id {
-			newTasks = append(newTasks, task)
-		}
-	}
-	fmt.Println("Task deleted successfully.")
-	return newTasks
-}
-
-// Batch delete
-func batchDeleteTasks(tasks []Task, ids []int) []Task {
-	mapIds := make(map[int]bool)
-
-	for _, id := range ids {
-		mapIds[id] = true
-	}
-
-	var newTasks []Task
-
-	for _, task := range tasks {
-		if !mapIds[task.ID] {
-			newTasks = append(newTasks, task)
-		}
-	}
-
-	fmt.Println("Batch delete completed.")
-
-	return newTasks
-}
-
-// Update task
-func updateTask(tasks []Task, id int, newDescription string) []Task {
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks[i].Description = newDescription
-			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
-			fmt.Println("Task updated successfully")
-			return tasks
-		}
-	}
-
-	fmt.Println("Task not found")
-	return tasks
-}
-
-// List tasks
-func listTasks(tasks []Task) {
-	fmt.Println("\n========================================= Task List ==============================================")
-	fmt.Printf("%-6s | %-48s | %-12s | %-20s | %-20s\n", "ID", "Description", "Status", "Created At", "Updated At")
-	fmt.Println(strings.Repeat("-", 98))
-	for _, task := range tasks {
-		fmt.Printf("%-6d | %-48s | %-12s | %-20s | %-20s\n",
-			task.ID,
-			task.Description,
-			task.Status,
-			task.CreatedAt,
-			task.UpdatedAt,
-		)
-	}
-	fmt.Println(strings.Repeat("=", 98))
-}
-
-// List tasks by status
-func listTasksByStatus(tasks []Task, status string) {
-	for _, task := range tasks {
-		if task.Status == status {
-			fmt.Printf("ID: %d | Description: %s | Status: %s\n",
-				task.ID, task.Description, task.Status)
-		}
-	}
-}
-
-// Mark task with new status
-func markWithStatus(tasks []Task, id int, status string) []Task {
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks[i].Status = status
-			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
-			fmt.Println("Task status updated successfully")
-			return tasks
-		}
-	}
-	return tasks
-}
-
-// Get status by id
-func getStatusById(tasks []Task, id int) []Task {
-	for _, task := range tasks {
-		if task.ID == id {
-			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
-				task.ID,
-				task.Description,
-				task.Status,
-				task.CreatedAt,
-				task.UpdatedAt,
-			)
-		}
-	}
-	return tasks
-}
-
-// Clear all tasks
-func clearAllTasks(tasks []Task) []Task {
-	var confirmation string
-	fmt.Print("Are you sure? This command will delete ALL tasks. (yes/no)")
-	fmt.Scanln(&confirmation)
-	if confirmation == "yes" || confirmation == "y" {
-		fmt.Println("All tasks deleted successfully.")
-		return []Task{}
-	}
-	fmt.Println("Task deletion cancelled.")
-	return tasks
-}
-
-// Show help
-func showHelp() {
-	fmt.Println(`
-Task Tracker CLI - Available Commands:
-  add <description> <status>     - Add a new task
-  update <id> <description>      - Update task description
-  delete <id>                    - Delete a task
-  batch-delete <id> - <id>       - Batch delete tasks
-  clear-all-tasks                - Clear all tasks
-  list                           - List all tasks
-  list-status <status>           - List tasks by status
-  get-task-by-id <id>            - Get task by id
-  mark-with-status <id> <status> - Change task status
-  show <id>                      - Show task details
-  help                           - Show this help
-    `)
-}
-
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("No arguments provided")
-		fmt.Println("Usage: <command> [arguments]")
-		return
-	}
-
-	currentTime := time.Now().Format(TimeFormat)
-
-	file, err := os.ReadFile("tasks.json")
-	var tasks []Task
-	if err == nil {
-		if err := json.Unmarshal(file, &tasks); err != nil {
-			fmt.Println("Warning: tasks.json is corrupted, starting fresh")
-			tasks = []Task{}
-		}
-	}
-
-	switch os.Args[1] {
-	case "add":
-		if len(os.Args) < 4 {
-			fmt.Println("Usage: add <description> <status>")
-			return
-		}
-		newTask := Task{
-			ID:          nextID(tasks),
-			Description: os.Args[2],
-			Status:      os.Args[3],
-			CreatedAt:   currentTime,
-			UpdatedAt:   currentTime,
-		}
-		tasks = append(tasks, newTask)
-		fmt.Println("Task added successfully.")
-
-	case "update":
-		if len(os.Args) < 4 {
-			fmt.Println("Usage: update <id> <new-description>")
-			return
-		}
-		id, err := getID(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		newDescription := os.Args[3]
-		tasks = updateTask(tasks, id, newDescription)
-
-	case "delete":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: delete <id>")
-			return
-		}
-		id, err := getID(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		tasks = deleteTask(tasks, id)
-	case "batch-delete":
-		ids, err := parseIDRange(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		tasks = batchDeleteTasks(tasks, ids)
-
-	case "list":
-		listTasks(tasks)
-
-	case "list-status":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: list-status <status>")
-			return
-		}
-		status := os.Args[2]
-		if status == "todo" || status == "in-progress" || status == "done" {
-			listTasksByStatus(tasks, status)
-		} else {
-			fmt.Println("Invalid status")
-		}
-
-	case "mark-with-status":
-		if len(os.Args) < 4 {
-			fmt.Println("Usage: mark-with-status <id> <status>")
-			return
-		}
-		id, err := getID(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		newStatus := os.Args[3]
-		tasks = markWithStatus(tasks, id, newStatus)
-
-	case "get-task-by-id":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: get-task-by-id <id>")
-			return
-		}
-		id, err := getID(os.Args[2])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		tasks = getStatusById(tasks, id)
-
-	case "clear-all-tasks":
-		tasks = clearAllTasks(tasks)
-
-	case "help", "-h", "--help":
-		showHelp()
-
-	default:
-		fmt.Println("Unknown command:")
-	}
-
-	byteValue, err := json.MarshalIndent(tasks, "", "  ")
-	if err != nil {
-		fmt.Println("Failed to encode tasks:", err)
-		return
-	}
-	if err := os.WriteFile("tasks.json", byteValue, 0644); err != nil {
-		fmt.Println("Failed to save tasks:", err)
-		return
-	}
 }
