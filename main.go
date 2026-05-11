@@ -42,7 +42,55 @@ func nextID(tasks []Task) int {
 	return maxId + 1
 }
 
-// Delete task from json file
+// Parse range of ids
+func parseIDRange(input string) ([]int, error) {
+	var ids []int
+
+	if strings.Contains(input, "-") {
+		parts := strings.Split(input, "-")
+
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("Invalid range format")
+		}
+
+		start, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("Invalid start id")
+		}
+
+		end, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return nil, fmt.Errorf("Invalid end id")
+		}
+
+		if start > end {
+			return nil, fmt.Errorf("Start id cannot be greater than end id")
+		}
+
+		for i := start; i <= end; i++ {
+			ids = append(ids, i)
+		}
+
+		return ids, nil
+	}
+
+	// Single ID
+	id, err := strconv.Atoi(input)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid ID")
+	}
+
+	ids = append(ids, id)
+
+	return ids, nil
+}
+
+// Add tasks
+func addTask() {
+	// TODO:
+}
+
+// Delete task
 func deleteTask(tasks []Task, id int) []Task {
 	newTasks := []Task{}
 
@@ -52,6 +100,27 @@ func deleteTask(tasks []Task, id int) []Task {
 		}
 	}
 	fmt.Println("Task deleted successfully.")
+	return newTasks
+}
+
+// Batch delete
+func batchDeleteTasks(tasks []Task, ids []int) []Task {
+	mapIds := make(map[int]bool)
+
+	for _, id := range ids {
+		mapIds[id] = true
+	}
+
+	var newTasks []Task
+
+	for _, task := range tasks {
+		if !mapIds[task.ID] {
+			newTasks = append(newTasks, task)
+		}
+	}
+
+	fmt.Println("Batch delete completed.")
+
 	return newTasks
 }
 
@@ -73,10 +142,10 @@ func updateTask(tasks []Task, id int, newDescription string) []Task {
 // List tasks
 func listTasks(tasks []Task) {
 	fmt.Println("\n========================================= Task List ==============================================")
-	fmt.Printf("%-6s | %-20s | %-12s | %-25s | %-25s\n", "ID", "Description", "Status", "Created At", "Updated At")
+	fmt.Printf("%-6s | %-48s | %-12s | %-20s | %-20s\n", "ID", "Description", "Status", "Created At", "Updated At")
 	fmt.Println(strings.Repeat("-", 98))
 	for _, task := range tasks {
-		fmt.Printf("%-6d | %-20s | %-12s | %-25s | %-25s\n",
+		fmt.Printf("%-6d | %-48s | %-12s | %-20s | %-20s\n",
 			task.ID,
 			task.Description,
 			task.Status,
@@ -146,6 +215,7 @@ Task Tracker CLI - Available Commands:
   add <description> <status>     - Add a new task
   update <id> <description>      - Update task description
   delete <id>                    - Delete a task
+  batch-delete <id> - <id>       - Batch delete tasks
   clear-all-tasks                - Clear all tasks
   list                           - List all tasks
   list-status <status>           - List tasks by status
@@ -214,6 +284,13 @@ func main() {
 			return
 		}
 		tasks = deleteTask(tasks, id)
+	case "batch-delete":
+		ids, err := parseIDRange(os.Args[2])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		tasks = batchDeleteTasks(tasks, ids)
 
 	case "list":
 		listTasks(tasks)
@@ -245,7 +322,7 @@ func main() {
 
 	case "get-task-by-id":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: get-status-by-id <id>")
+			fmt.Println("Usage: get-task-by-id <id>")
 			return
 		}
 		id, err := getID(os.Args[2])

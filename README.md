@@ -24,29 +24,25 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 ---
 
 ## TODO:
-[x] Error Handling
-
-[x] Edge Cases
-
-[ ] Separate Concerns
-
-[ ] Input Validation
-
-[x] Better Output Formatting
-
-[x] Get tasks by id
-
-[ ] Show task details
-
-[x] Clear all tasks with confirmation
-
-[x] Help
-
-[ ] Use constants
-
-[ ] Better main function structure
-
-[ ] Data migration support e.g. Handle ID collision or gaps
+1. Separate concerns
+2. Avoid rewriting tasks.json after every command
+3. Error handling
+4. Validate status values
+5. Return errors instead of printing inside helpers
+6. Use constants for statuses
+7. Improve command parsing
+8. Improve deletion/update behavior
+9. Use pointers where appropriate
+10. Add unit tests
+11. Add Task filtering/sorting
+12. Add colored terminal output
+13. Replace timestamps as string with time.Time
+14. Add atomic file writes
+15. Use enums via custom type
+16. Add graceful UX improvements
+17. Rename misleading function names
+18. Avoid repeated task scanning
+19. Add persistence abstraction
 
 ---
 
@@ -99,6 +95,12 @@ Run the executable:
 ./task-cli delete 1
 ```
 
+### Batch delete tasks
+
+```bash
+./task-cli batch-delete 1-5
+```
+
 ### List all tasks
 
 ```bash
@@ -111,6 +113,35 @@ Run the executable:
 ./task-cli list-status todo
 ./task-cli list-status in-progress
 ./task-cli list-status done
+```
+
+### Mark tasks with status
+
+```bash
+./task-cli mark-with-status 1 todo
+./task-cli mark-with-status 1 in-progress
+./task-cli mark-with-status 1 done
+```
+
+### Get task by id
+
+```bash
+./task-cli get-task-by-id 1
+```
+
+### Clear all tasks
+
+```bash
+./task-cli clear-all-tasks
+Are you sure? This command will delete ALL tasks. (yes/no)
+```
+
+### Help
+
+```bash
+./task-cli help
+./task-cli -h
+./task-cli --help
 ```
 
 ---
