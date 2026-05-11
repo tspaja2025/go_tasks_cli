@@ -32,7 +32,7 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 
 [ ] Input Validation
 
-[ ] Better Output Formatting
+[x] Better Output Formatting
 
 [x] Get tasks by id
 

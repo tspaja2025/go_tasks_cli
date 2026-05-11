@@ -5,18 +5,23 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type Task struct {
-	Id          int    `json:"id"`
+	ID          int    `json:"id"`
 	Description string `json:"description"`
 	Status      string `json:"status"` // "todo", "in-progress", "done"
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
 }
 
-func getId(id string) (int, error) {
+const (
+	TimeFormat = "2006-01-02 15:04:05"
+)
+
+func getID(id string) (int, error) {
 	idStr, err := strconv.Atoi(id)
 	if err != nil {
 		return 0, fmt.Errorf("Invalid ID: %s", id)
@@ -25,12 +30,12 @@ func getId(id string) (int, error) {
 }
 
 // Find maximum amount IDs and increment
-func nextId(tasks []Task) int {
+func nextID(tasks []Task) int {
 	maxId := 0
 
 	for _, task := range tasks {
-		if task.Id > maxId {
-			maxId = task.Id
+		if task.ID > maxId {
+			maxId = task.ID
 		}
 	}
 
@@ -42,7 +47,7 @@ func deleteTask(tasks []Task, id int) []Task {
 	newTasks := []Task{}
 
 	for _, task := range tasks {
-		if task.Id != id {
+		if task.ID != id {
 			newTasks = append(newTasks, task)
 		}
 	}
@@ -53,9 +58,9 @@ func deleteTask(tasks []Task, id int) []Task {
 // Update task
 func updateTask(tasks []Task, id int, newDescription string) []Task {
 	for i, task := range tasks {
-		if task.Id == id {
+		if task.ID == id {
 			tasks[i].Description = newDescription
-			tasks[i].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
 			fmt.Println("Task updated successfully")
 			return tasks
 		}
@@ -67,15 +72,19 @@ func updateTask(tasks []Task, id int, newDescription string) []Task {
 
 // List tasks
 func listTasks(tasks []Task) {
+	fmt.Println("\n========================================= Task List ==============================================")
+	fmt.Printf("%-6s | %-20s | %-12s | %-25s | %-25s\n", "ID", "Description", "Status", "Created At", "Updated At")
+	fmt.Println(strings.Repeat("-", 98))
 	for _, task := range tasks {
-		fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
-			task.Id,
+		fmt.Printf("%-6d | %-20s | %-12s | %-25s | %-25s\n",
+			task.ID,
 			task.Description,
 			task.Status,
 			task.CreatedAt,
 			task.UpdatedAt,
 		)
 	}
+	fmt.Println(strings.Repeat("=", 98))
 }
 
 // List tasks by status
@@ -83,7 +92,7 @@ func listTasksByStatus(tasks []Task, status string) {
 	for _, task := range tasks {
 		if task.Status == status {
 			fmt.Printf("ID: %d | Description: %s | Status: %s\n",
-				task.Id, task.Description, task.Status)
+				task.ID, task.Description, task.Status)
 		}
 	}
 }
@@ -91,9 +100,9 @@ func listTasksByStatus(tasks []Task, status string) {
 // Mark task with new status
 func markWithStatus(tasks []Task, id int, status string) []Task {
 	for i, task := range tasks {
-		if task.Id == id {
+		if task.ID == id {
 			tasks[i].Status = status
-			tasks[i].UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
 			fmt.Println("Task status updated successfully")
 			return tasks
 		}
@@ -104,9 +113,9 @@ func markWithStatus(tasks []Task, id int, status string) []Task {
 // Get status by id
 func getStatusById(tasks []Task, id int) []Task {
 	for _, task := range tasks {
-		if task.Id == id {
+		if task.ID == id {
 			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
-				task.Id,
+				task.ID,
 				task.Description,
 				task.Status,
 				task.CreatedAt,
@@ -154,7 +163,7 @@ func main() {
 		return
 	}
 
-	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	currentTime := time.Now().Format(TimeFormat)
 
 	file, err := os.ReadFile("tasks.json")
 	var tasks []Task
@@ -172,7 +181,7 @@ func main() {
 			return
 		}
 		newTask := Task{
-			Id:          nextId(tasks),
+			ID:          nextID(tasks),
 			Description: os.Args[2],
 			Status:      os.Args[3],
 			CreatedAt:   currentTime,
@@ -186,7 +195,7 @@ func main() {
 			fmt.Println("Usage: update <id> <new-description>")
 			return
 		}
-		id, err := getId(os.Args[2])
+		id, err := getID(os.Args[2])
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -199,7 +208,7 @@ func main() {
 			fmt.Println("Usage: delete <id>")
 			return
 		}
-		id, err := getId(os.Args[2])
+		id, err := getID(os.Args[2])
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -226,7 +235,7 @@ func main() {
 			fmt.Println("Usage: mark-with-status <id> <status>")
 			return
 		}
-		id, err := getId(os.Args[2])
+		id, err := getID(os.Args[2])
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -239,7 +248,7 @@ func main() {
 			fmt.Println("Usage: get-status-by-id <id>")
 			return
 		}
-		id, err := getId(os.Args[2])
+		id, err := getID(os.Args[2])
 		if err != nil {
 			fmt.Println(err)
 			return
