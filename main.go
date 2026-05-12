@@ -62,7 +62,7 @@ func executeCommand(command string, args []string, tasks []Task) ([]Task, error)
 	case "batch-delete":
 		return handleBatchDelete(args, tasks)
 	case "list":
-		return handleList(tasks), nil
+		return handleList(tasks)
 	case "list-status":
 		return handleListStatus(args, tasks)
 	case "mark-with-status":
@@ -71,6 +71,8 @@ func executeCommand(command string, args []string, tasks []Task) ([]Task, error)
 		return handleGetTask(args, tasks)
 	case "clear-all-tasks":
 		return handleClearAll(tasks)
+	case "show":
+		return handleShow(args, tasks)
 	case "help", "-h", "--help":
 		printHelp()
 		return tasks, nil
@@ -83,6 +85,10 @@ func executeCommand(command string, args []string, tasks []Task) ([]Task, error)
 func handleAdd(args []string, tasks []Task) ([]Task, error) {
 	if len(args) < 2 {
 		return tasks, fmt.Errorf("Usage: add <description> <status>")
+	}
+
+	if !isValidStatus(args[1]) {
+		return tasks, fmt.Errorf("Invalid status: %s, Valid statuses: todo, in-progress, done", args[1])
 	}
 
 	currentTime := time.Now()
@@ -197,9 +203,13 @@ func batchDeleteTasks(tasks []Task, ids []int) []Task {
 }
 
 // Handle list tasks
-func handleList(tasks []Task) []Task {
+func handleList(tasks []Task) ([]Task, error) {
+	if len(tasks) == 0 {
+		fmt.Println("No tasks found")
+		return tasks, nil
+	}
 	listTasks(tasks)
-	return tasks
+	return tasks, nil
 }
 
 func listTasks(tasks []Task) {
@@ -232,6 +242,10 @@ func handleListStatus(args []string, tasks []Task) ([]Task, error) {
 		return tasks, fmt.Errorf("Usage: list-status <status>")
 	}
 
+	if !isValidStatus(args[0]) {
+		return tasks, fmt.Errorf("Invalid status: %s, Valid statuses: todo, in-progress, done", args[0])
+	}
+
 	status := args[0]
 	if status != StatusTodo && status != StatusInProgress && status != StatusDone {
 		return tasks, fmt.Errorf("Invalid status: %s", status)
@@ -261,19 +275,19 @@ func handleMarkStatus(args []string, tasks []Task) ([]Task, error) {
 		return tasks, err
 	}
 
-	return markWithStatus(tasks, id, args[1]), nil
+	return markWithStatus(tasks, id, args[1])
 }
 
-func markWithStatus(tasks []Task, id int, status string) []Task {
+func markWithStatus(tasks []Task, id int, status string) ([]Task, error) {
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Status = status
 			tasks[i].UpdatedAt = time.Now()
 			fmt.Println("Task status updated successfully")
-			return tasks
+			return tasks, nil
 		}
 	}
-	return tasks
+	return tasks, fmt.Errorf("Task with ID %d not found", id)
 }
 
 // Handle get task
@@ -287,22 +301,23 @@ func handleGetTask(args []string, tasks []Task) ([]Task, error) {
 		return tasks, err
 	}
 
-	return getTaskByID(tasks, id), nil
+	return getTaskByID(tasks, id)
 }
 
-func getTaskByID(tasks []Task, id int) []Task {
+func getTaskByID(tasks []Task, id int) ([]Task, error) {
 	for _, task := range tasks {
 		if task.ID == id {
 			fmt.Printf("ID: %d | Description: %s | Status: %s | CreatedAt: %s | UpdatedAt: %s\n",
 				task.ID,
 				task.Description,
 				task.Status,
-				task.CreatedAt,
-				task.UpdatedAt,
+				task.CreatedAt.Format(TimeFormat),
+				task.UpdatedAt.Format(TimeFormat),
 			)
+			return tasks, nil
 		}
 	}
-	return tasks
+	return tasks, fmt.Errorf("Task with ID %s not found", id)
 }
 
 // Handle clear all
@@ -378,6 +393,17 @@ Task Tracker CLI - Available Commands:
   show <id>                      - Show task details
   help                           - Show this help
     `)
+}
+
+func handleShow(args []string, tasks []Task) ([]Task, error) {
+	if len(args) < 1 {
+		return tasks, fmt.Errorf("Usage: show <id>")
+	}
+	id, err := getID(args[0])
+	if err != nil {
+		return tasks, err
+	}
+	return getTaskByID(tasks, id)
 }
 
 func getID(id string) (int, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -9,11 +10,12 @@ import (
 
 // Test helper functions
 func setupTestTasks() []Task {
+	var testTime = time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	return []Task{
-		{ID: 1, Description: "Test task 1", Status: StatusTodo, CreatedAt: time.Now()},
-		{ID: 2, Description: "Test task 2", Status: StatusInProgress, CreatedAt: time.Now()},
-		{ID: 3, Description: "Test task 3", Status: StatusDone, CreatedAt: time.Now()},
-		{ID: 4, Description: "Test task 4", Status: StatusTodo, CreatedAt: time.Now()},
+		{ID: 1, Description: "Test task 1", Status: StatusTodo, CreatedAt: testTime},
+		{ID: 2, Description: "Test task 2", Status: StatusInProgress, CreatedAt: testTime},
+		{ID: 3, Description: "Test task 3", Status: StatusDone, CreatedAt: testTime},
+		{ID: 4, Description: "Test task 4", Status: StatusTodo, CreatedAt: testTime},
 	}
 }
 
@@ -84,7 +86,7 @@ func TestGetID(t *testing.T) {
 			if tc.expectErr && err == nil {
 				t.Error("Expected error but got none")
 			}
-			if tc.expectErr && err == nil {
+			if tc.expectErr && err != nil {
 				t.Errorf("Expected no error but got: %v", err)
 			}
 			if result != tc.expected {
@@ -118,7 +120,7 @@ func TestParseIDRange(t *testing.T) {
 			if tc.expectErr && err == nil {
 				t.Error("Expected error but got none")
 			}
-			if tc.expectErr && err == nil {
+			if tc.expectErr && err != nil {
 				t.Errorf("Expected no error but got: %v", err)
 			}
 			if !reflect.DeepEqual(result, tc.expected) {
@@ -552,27 +554,138 @@ func TestHandleBatchDelete(t *testing.T) {
 
 // Test handleListStatus function
 func TestHandleListStatus(t *testing.T) {
-	// TODO:
+	tasks := setupTestTasks()
+
+	// Test valid status
+	args := []string{StatusTodo}
+	_, err := handleListStatus(args, tasks)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Test invalid status
+	args = []string{"invalid"}
+	_, err = handleListStatus(args, tasks)
+	if err == nil {
+		t.Error("Expected error for invalid status")
+	}
+
+	// Test missing arguments
+	args = []string{}
+	_, err = handleListStatus(args, tasks)
+	if err == nil {
+		t.Error("Expected error for missing argument")
+	}
 }
 
 // Test handleMarkStatus function
 func TestHandleMarkStatus(t *testing.T) {
-	// TODO:
+	tasks := setupTestTasks()
+
+	// Test valid marking
+	args := []string{"1", StatusDone}
+	newTasks, err := handleMarkStatus(args, tasks)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Verify status changed
+	for _, task := range newTasks {
+		if task.ID == 1 && task.Status != StatusDone {
+			t.Errorf("Expected status '%s', got '%s'", StatusDone, task.Status)
+		}
+	}
+
+	// Test invalid ID
+	args = []string{"invalid", StatusDone}
+	_, err = handleListStatus(args, tasks)
+	if err == nil {
+		t.Error("Expected error for invalid ID")
+	}
+
+	// Test missing arguments
+	args = []string{"1"}
+	_, err = handleListStatus(args, tasks)
+	if err == nil {
+		t.Error("Expected error for missing argument")
+	}
 }
 
 // Test handleGetTask function
 func TestHandleGetTask(t *testing.T) {
-	// TODO:
+	tasks := setupTestTasks()
+
+	// Test valid marking
+	args := []string{"2"}
+	_, err := handleMarkStatus(args, tasks)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// Test non-existent ID
+	args = []string{"999"}
+	_, err = handleGetTask(args, tasks)
+	if err != nil {
+		t.Errorf("Unexpected error for non-existent ID: %v", err)
+	}
+
+	// Test invalid ID
+	args = []string{"invalid"}
+	_, err = handleGetTask(args, tasks)
+	if err == nil {
+		t.Error("Expected error for invalid ID")
+	}
 }
 
 // Test loadTasks and saveTasks functions
 func TestLoadAndSaveTasks(t *testing.T) {
-	// TODO:
+	// Save original file path and restore after test
+	originalFile := "tasks.json"
+	defer func() {
+		os.Remove(originalFile)
+	}()
+
+	tasks := setupTestTasks()
+
+	// Test saving
+	err := saveTasks(tasks)
+	if err != nil {
+		t.Errorf("Error saving tasks: %v", err)
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(originalFile); os.IsNotExist(err) {
+		t.Error("Tasks file was not created")
+	}
+
+	// Test loading
+	loadedTasks, err := loadTasks()
+	if err != nil {
+		t.Errorf("Error loading tasks: %v", err)
+	}
+	if len(loadedTasks) != len(tasks) {
+		t.Errorf("Expected %d tasks, got %d", len(tasks), len(loadedTasks))
+	}
+
+	// Test loading from non-exitent file
+	os.Remove(originalFile)
+	emptyTasks, err := loadTasks()
+	if err != nil {
+		t.Errorf("Error loading from non-existent file: %v", err)
+	}
+	if len(emptyTasks) != 0 {
+		t.Error("Expected empty task list for non-existent file")
+	}
 }
 
 // Test handleClearAll function
 func TestHandleClearAll(t *testing.T) {
-	// TODO:
+	tasks := setupTestTasks()
+
+	result := clearAllTasks(tasks)
+	if result == nil {
+		t.Error("clearAllTasks should return a task slice")
+	}
 }
 
 // Test executeCommand function

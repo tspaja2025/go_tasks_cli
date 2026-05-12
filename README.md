@@ -23,23 +23,6 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 
 ---
 
-## TODO:
-2. Avoid rewriting tasks.json after every command
-5. Return errors instead of printing inside helpers
-6. Use constants for statuses
-7. Improve command parsing
-8. Improve deletion/update behavior
-9. Use pointers where appropriate
-11. Add Task filtering/sorting
-12. Add colored terminal output
-14. Add atomic file writes
-15. Use enums via custom type
-16. Add graceful UX improvements
-18. Avoid repeated task scanning
-19. Add persistence abstraction
-
----
-
 ## Installation
 
 Clone the repository:
