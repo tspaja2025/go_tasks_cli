@@ -10,11 +10,11 @@ import (
 )
 
 type Task struct {
-	ID          int    `json:"id"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID          int       `json:"id"`
+	Description string    `json:"description"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 const (
@@ -85,7 +85,7 @@ func handleAdd(args []string, tasks []Task) ([]Task, error) {
 		return tasks, fmt.Errorf("Usage: add <description> <status>")
 	}
 
-	currentTime := time.Now().Format(TimeFormat)
+	currentTime := time.Now()
 	newTask := Task{
 		ID:          nextID(tasks),
 		Description: args[0],
@@ -117,7 +117,7 @@ func updateTask(tasks []Task, id int, newDescription string) []Task {
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Description = newDescription
-			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
+			tasks[i].UpdatedAt = time.Now()
 			fmt.Println("Task updated successfully")
 			return tasks
 		}
@@ -203,19 +203,27 @@ func handleList(tasks []Task) []Task {
 }
 
 func listTasks(tasks []Task) {
-	fmt.Println("\n========================================= Task List ==============================================")
-	fmt.Printf("%-6s | %-48s | %-12s | %-20s | %-20s\n", "ID", "Description", "Status", "Created At", "Updated At")
-	fmt.Println(strings.Repeat("-", 98))
+	descriptionWidth := getMaxDescriptionWidth(tasks)
+
+	headerFormat := fmt.Sprintf("%%-6s | %%-%ds | %%-12s | %%-20s | %%-20s\n", descriptionWidth)
+	rowFormat := fmt.Sprintf("%%-6d | %%-%ds | %%-12s | %%-20s | %%-20s\n", descriptionWidth)
+
+	fmt.Println("\n=============================================== Task List ====================================================")
+
+	fmt.Printf(headerFormat, "ID", "Description", "Status", "Created At", "Updated At")
+
+	fmt.Println(strings.Repeat("-", descriptionWidth+70))
+
 	for _, task := range tasks {
-		fmt.Printf("%-6d | %-48s | %-12s | %-20s | %-20s\n",
+		fmt.Printf(rowFormat,
 			task.ID,
 			task.Description,
 			task.Status,
-			task.CreatedAt,
-			task.UpdatedAt,
+			task.CreatedAt.Format(TimeFormat),
+			task.UpdatedAt.Format(TimeFormat),
 		)
 	}
-	fmt.Println(strings.Repeat("=", 98))
+	fmt.Println(strings.Repeat("=", descriptionWidth+70))
 }
 
 // Handle list statuses
@@ -260,7 +268,7 @@ func markWithStatus(tasks []Task, id int, status string) []Task {
 	for i, task := range tasks {
 		if task.ID == id {
 			tasks[i].Status = status
-			tasks[i].UpdatedAt = time.Now().Format(TimeFormat)
+			tasks[i].UpdatedAt = time.Now()
 			fmt.Println("Task status updated successfully")
 			return tasks
 		}
@@ -444,4 +452,17 @@ func isValidStatus(status string) bool {
 	default:
 		return false
 	}
+}
+
+// Find maximum description width
+func getMaxDescriptionWidth(tasks []Task) int {
+	maxWidth := len("Description")
+
+	for _, task := range tasks {
+		if len(task.Description) > maxWidth {
+			maxWidth = len(task.Description)
+		}
+	}
+
+	return maxWidth
 }

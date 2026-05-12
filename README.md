@@ -30,10 +30,8 @@ Check out the project details [roadmap.sh](https://roadmap.sh/projects/task-trac
 7. Improve command parsing
 8. Improve deletion/update behavior
 9. Use pointers where appropriate
-10. Add unit tests
 11. Add Task filtering/sorting
 12. Add colored terminal output
-13. Replace timestamps as string with time.Time
 14. Add atomic file writes
 15. Use enums via custom type
 16. Add graceful UX improvements

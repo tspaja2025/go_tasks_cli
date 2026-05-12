@@ -10,10 +10,10 @@ import (
 // Test helper functions
 func setupTestTasks() []Task {
 	return []Task{
-		{ID: 1, Description: "Test task 1", Status: StatusTodo, CreatedAt: time.Now().Format(TimeFormat)},
-		{ID: 2, Description: "Test task 2", Status: StatusInProgress, CreatedAt: time.Now().Format(TimeFormat)},
-		{ID: 3, Description: "Test task 3", Status: StatusDone, CreatedAt: time.Now().Format(TimeFormat)},
-		{ID: 4, Description: "Test task 4", Status: StatusTodo, CreatedAt: time.Now().Format(TimeFormat)},
+		{ID: 1, Description: "Test task 1", Status: StatusTodo, CreatedAt: time.Now()},
+		{ID: 2, Description: "Test task 2", Status: StatusInProgress, CreatedAt: time.Now()},
+		{ID: 3, Description: "Test task 3", Status: StatusDone, CreatedAt: time.Now()},
+		{ID: 4, Description: "Test task 4", Status: StatusTodo, CreatedAt: time.Now()},
 	}
 }
 
